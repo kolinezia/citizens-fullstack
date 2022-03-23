@@ -1,0 +1,58 @@
+version: '3'
+
+services:
+
+    mongodb:
+        image: mongo:5.0.0-focal
+        container_name: mongodb
+        env_file: .env
+        volumes:
+            - ./docker/mongodb:/data/db
+        ports:
+            - 27017:27017
+        environment:
+            MONGO_INITDB_ROOT_USERNAME: $MONGO_LOGIN
+            MONGO_INITDB_ROOT_PASSWORD: $MONGO_PASSWORD
+            MONGO_INITDB_DATABASE: $MONGO_DBNAME
+        restart: always
+        networks:
+            - app-network
+    
+    backend:
+        build: ./backend
+        container_name: backend
+        image: home-task-backend
+        env_file: .env
+        volumes:
+            # - ./backend:/app
+            - node_modules:/app/node_modules
+        ports:
+            - 3000:3000
+        restart: always
+        depends_on: 
+            - mongodb
+        networks:
+            - app-network
+
+    frontend:
+        container_name: frontend
+        image: home-task-frontend
+        build:
+            context: ./frontend
+            dockerfile: Dockerfile
+        # volumes:
+        #     - ./frontend/public:/app
+        ports:
+            - 8888:8080
+        restart: always
+        depends_on: 
+            - backend
+        networks:
+            - app-network
+
+networks:
+    app-network:
+        driver: bridge
+          
+volumes:
+    node_modules:
